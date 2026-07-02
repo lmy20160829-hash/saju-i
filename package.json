@@ -1,0 +1,22 @@
+{
+  "name": "saju-i",
+  "version": "1.0.0",
+  "description": "saju-i — 마네키네코가 봐주는 사주명리 웹앱",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node serve.mjs",
+    "test": "node test-core.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.109.1",
+    "@fullstackfamily/manseryeok": "^1.0.8",
+    "lunar-javascript": "^1.7.7"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.3.0"
+  }
+}

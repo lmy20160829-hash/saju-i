@@ -1,0 +1,389 @@
+/* ============================================================
+   style.css — 사주아이(saju-i) 디자인
+   컨셉: 마네키네코 하얀 복고양이 — 크림 바탕 + 복빨강/금색 포인트
+   ============================================================ */
+
+/* ── 디자인 토큰: 사이트 전체에서 쓰는 색·크기 이름표 ── */
+:root {
+  --cream: #FBF6EC;        /* 바탕 크림색 */
+  --card: #FFFFFF;         /* 카드 흰색 */
+  --ink: #3B3430;          /* 먹색 글자 */
+  --ink-soft: #857A6F;     /* 옅은 글자 */
+  --red: #C93A2E;          /* 복 빨강 (마네키네코 목줄) */
+  --red-deep: #A82E24;
+  --gold: #C99B3F;         /* 금색 (방울·금화) */
+  --gold-deep: #8F6B24;
+  --gold-pale: #F0E4C9;    /* 옅은 금색 (경계선) */
+
+  /* 오행 색 — 색각이상 검증 통과 팔레트 */
+  --el-wood: #5B8A4E;
+  --el-fire: #C93A2E;
+  --el-earth: #C99B3F;
+  --el-metal: #0E9C93;
+  --el-water: #2E5C9E;
+
+  --radius: 20px;
+  --shadow: 0 6px 24px rgba(87, 62, 32, 0.10);
+  --font-display: 'Gowun Batang', 'Noto Serif KR', serif;
+  --font-body: 'Gowun Dodum', 'Apple SD Gothic Neo', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* 스크린리더 전용 텍스트 (화면에는 안 보임) */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* 키보드로 이동할 때 지금 위치를 빨간 테두리로 표시 */
+:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+a { color: var(--red-deep); }
+
+/* ══════════ 첫인사 영역 ══════════ */
+.hero { text-align: center; }
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: 0.14em;
+  margin: 0 0 4px;
+}
+.wordmark-en {
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  color: var(--gold-deep);
+  vertical-align: 2px;
+}
+
+.neko-stage { padding: 8px 0 4px; }
+
+.neko {
+  width: min(230px, 62vw);
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 18px rgba(87, 62, 32, 0.16));
+}
+
+/* 손 흔들기: 어깨를 축으로 살짝 까딱까딱 */
+.neko-paw {
+  transform-origin: 150px 108px;
+  animation: beckon 1.8s ease-in-out infinite;
+}
+@keyframes beckon {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-9deg); }
+}
+/* '움직임 줄이기'를 켠 사용자에게는 애니메이션을 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  .neko-paw { animation: none; }
+}
+
+.coin-char {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  fill: var(--red-deep);
+}
+
+/* ══════════ 말풍선 ══════════ */
+.bubble {
+  position: relative;
+  display: inline-block;
+  background: var(--card);
+  border: 2px solid var(--gold-pale);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 20px;
+  margin: 18px auto 0;
+  max-width: min(480px, 100%);
+  text-align: center;
+  word-break: keep-all;   /* 한국어 단어 중간에서 줄이 끊기지 않게 */
+}
+/* 말풍선 꼬리 (고양이 쪽을 향하는 세모) */
+.bubble::before {
+  content: '';
+  position: absolute;
+  top: -12px; left: 50%;
+  transform: translateX(-50%);
+  border: 11px solid transparent;
+  border-bottom-color: var(--gold-pale);
+  border-top: 0;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  top: -9px; left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-bottom-color: var(--card);
+  border-top: 0;
+}
+.bubble strong { color: var(--red-deep); }
+
+.bubble-result { display: block; margin: 0 auto 18px; }
+
+/* ══════════ 카드 공통 ══════════ */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 22px;
+  margin-top: 26px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 4px solid var(--red);
+  line-height: 1.4;
+}
+.section-title + .section-title,
+.elements + .section-title { margin-top: 28px; }
+
+/* ══════════ 입력 폼 ══════════ */
+.field { margin-bottom: 18px; border: 0; padding: 0; }
+
+.field label,
+.field legend {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.hint { font-size: 0.82rem; color: var(--ink-soft); font-weight: 400; }
+
+input[type='date'],
+input[type='time'],
+select {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--cream);
+  border: 2px solid var(--gold-pale);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 48px;               /* 손가락으로 누르기 편한 크기 */
+}
+input:focus, select:focus { border-color: var(--gold); outline: none; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-weight: 400 !important;
+}
+.check input { width: 20px; height: 20px; accent-color: var(--red); }
+
+/* 성별 알약 버튼 */
+.pills { display: flex; gap: 10px; }
+.pill { flex: 1; }
+.pill input { position: absolute; opacity: 0; }
+.pill span {
+  display: block;
+  text-align: center;
+  padding: 11px 0;
+  border: 2px solid var(--gold-pale);
+  border-radius: 999px;
+  background: var(--cream);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pill input:checked + span {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  font-weight: 600;
+}
+.pill input:focus-visible + span {
+  outline: 3px solid var(--red);
+  outline-offset: 2px;
+}
+
+.form-error {
+  color: var(--red-deep);
+  background: #FAE9E7;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+}
+
+.cta {
+  width: 100%;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.08rem;
+  color: #fff;
+  background: var(--red);
+  border: 0;
+  border-radius: 999px;
+  padding: 15px 0;
+  min-height: 52px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(201, 58, 46, 0.32);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.cta:hover { background: var(--red-deep); }
+.cta:active { transform: scale(0.985); }
+
+/* ══════════ 명식표 ══════════ */
+.result-birth {
+  margin: -6px 0 14px;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+.myeongsik {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px;
+  table-layout: fixed;
+}
+
+.myeongsik th {
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 6px 0 2px;
+}
+.myeongsik th small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.myeongsik td {
+  background: var(--cream);
+  border: 2px solid var(--gold-pale);
+  border-radius: 14px;
+  text-align: center;
+  padding: 10px 2px 8px;
+  vertical-align: top;
+}
+
+/* 글자마다 자기 오행 색을 입는다 */
+.char-hanja {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 8.5vw, 2.5rem);
+  line-height: 1.15;
+}
+.char-ko {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.el-목 { color: var(--el-wood); }
+.el-화 { color: var(--el-fire); }
+.el-토 { color: var(--el-earth); }
+.el-금 { color: var(--el-metal); }
+.el-수 { color: var(--el-water); }
+
+/* 일간(나) 강조: 빨간 도장 느낌 */
+td.day-master {
+  border-color: var(--red);
+  box-shadow: inset 0 0 0 1.5px var(--red);
+  position: relative;
+}
+.me-badge {
+  position: absolute;
+  top: -10px; right: -6px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+  box-shadow: 0 2px 6px rgba(201, 58, 46, 0.4);
+}
+
+/* 시간 모름일 때 비어 있는 시주 칸 */
+td.empty-pillar {
+  color: var(--ink-soft);
+  border-style: dashed;
+}
+td.empty-pillar .char-hanja { color: var(--gold-pale); }
+
+.note {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 12px 2px 0;
+}
+
+/* ══════════ 오행 분포 미터 ══════════ */
+.elements { display: grid; gap: 10px; }
+
+.el-row {
+  display: grid;
+  grid-template-columns: 74px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+.el-name { font-size: 0.95rem; font-weight: 600; }
+.el-name .char-hanja {
+  display: inline;
+  font-size: 1.05rem;
+  margin-right: 4px;
+}
+.el-track {
+  background: var(--cream);
+  border-radius: 6px;
+  height: 18px;
+  overflow: hidden;
+}
+.el-bar {
+  display: block;               /* span은 원래 크기를 못 가져서 꼭 필요 */
+  height: 100%;
+  border-radius: 0 4px 4px 0;   /* 데이터 끝쪽만 둥글게 */
+  transition: width 0.5s ease;
+}
+.el-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+}
+.el-zero .el-name, .el-zero .el-count { color: var(--ink-soft); }
+
+/* ══════════ 푸터 ══════════ */
+.footer {
+  margin-top: 34px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.footer p { margin: 4px 0; }
+
+/* ══════════ 화면이 좁을 때(폰) 미세 조정 ══════════ */
+@media (max-width: 420px) {
+  .card { padding: 20px 14px; }
+  .el-row { grid-template-columns: 64px 1fr 40px; }
+}

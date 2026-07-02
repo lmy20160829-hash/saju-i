@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>사주아이 saju-i — 복고양이가 봐주는 사주</title>
+  <meta name="description" content="마네키네코 복고양이가 만세력으로 정확하게 봐주는 사주명리" />
+  <meta name="theme-color" content="#FBF6EC" />
+
+  <!-- 글꼴: 고운바탕(제목·한자) + 고운돋움(본문) — 무료 구글 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- 절기 계산 라이브러리(lunar-javascript)는 옛날 방식(전역 변수)이라 먼저 불러온다 -->
+  <script src="vendor/lunar.js"></script>
+</head>
+<body>
+  <main class="page">
+
+    <!-- ══════════ 1. 첫인사: 마네키네코 ══════════ -->
+    <header class="hero">
+      <p class="wordmark">사주아이 <span class="wordmark-en">saju-i</span></p>
+
+      <!-- 마네키네코: 외부 이미지 없이 SVG로 직접 그린 그림 -->
+      <div class="neko-stage">
+        <svg
+          class="neko" viewBox="0 0 220 210" role="img"
+          aria-label="한 손을 흔들며 복을 부르는 하얀 고양이 마네키네코"
+        >
+          <!-- 꼬리 -->
+          <path d="M168 172 q26 2 24 -20 q-1 -12 -14 -11" fill="none"
+                stroke="var(--ink)" stroke-width="7" stroke-linecap="round" />
+
+          <!-- 흔드는 왼팔(화면 오른쪽): group째로 살랑살랑 애니메이션 -->
+          <g class="neko-paw">
+            <path d="M150 108 q22 -12 22 -52" fill="none"
+                  stroke="var(--ink)" stroke-width="3.2" stroke-linecap="round" />
+            <path d="M150 108 q22 -12 22 -52 l16 0 q4 44 -30 64 z" fill="#FFFDF8" stroke="none" />
+            <path d="M188 56 q4 44 -30 64" fill="none"
+                  stroke="var(--ink)" stroke-width="3.2" stroke-linecap="round" />
+            <circle cx="181" cy="53" r="14.5" fill="#FFFDF8" stroke="var(--ink)" stroke-width="3.2" />
+            <path d="M173 46 l0 8 M180 44 l0 9 M187 46 l0 8" stroke="var(--ink)"
+                  stroke-width="2" stroke-linecap="round" />
+          </g>
+
+          <!-- 몸통 -->
+          <ellipse cx="105" cy="150" rx="58" ry="50" fill="#FFFDF8"
+                   stroke="var(--ink)" stroke-width="3.2" />
+          <!-- 배의 크림색 무늬 -->
+          <ellipse cx="105" cy="158" rx="34" ry="30" fill="var(--cream)" stroke="none" />
+
+          <!-- 귀 -->
+          <path d="M62 58 L68 22 L94 44 Z" fill="#FFFDF8" stroke="var(--ink)"
+                stroke-width="3.2" stroke-linejoin="round" />
+          <path d="M148 58 L142 22 L116 44 Z" fill="#FFFDF8" stroke="var(--ink)"
+                stroke-width="3.2" stroke-linejoin="round" />
+          <path d="M70 50 L73 33 L86 44 Z" fill="var(--red)" stroke="none" />
+          <path d="M140 50 L137 33 L124 44 Z" fill="var(--red)" stroke="none" />
+
+          <!-- 머리 -->
+          <circle cx="105" cy="82" r="46" fill="#FFFDF8" stroke="var(--ink)" stroke-width="3.2" />
+
+          <!-- 감은 행복한 눈 -->
+          <path d="M80 78 q8 8 16 0" fill="none" stroke="var(--ink)"
+                stroke-width="3.2" stroke-linecap="round" />
+          <path d="M114 78 q8 8 16 0" fill="none" stroke="var(--ink)"
+                stroke-width="3.2" stroke-linecap="round" />
+          <!-- 볼터치 -->
+          <circle cx="76" cy="92" r="6" fill="#F3BFAE" opacity="0.75" />
+          <circle cx="134" cy="92" r="6" fill="#F3BFAE" opacity="0.75" />
+          <!-- 코와 입 -->
+          <path d="M102 90 q3 -3 6 0 q-1.5 4 -3 4 q-1.5 0 -3 -4" fill="var(--red)" />
+          <path d="M105 94 q0 6 -6 7 M105 94 q0 6 6 7" fill="none"
+                stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" />
+          <!-- 수염 -->
+          <g stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" opacity="0.85">
+            <path d="M62 84 L44 80" /><path d="M63 92 L45 92" /><path d="M62 100 L46 104" />
+            <path d="M148 84 L166 80" /><path d="M147 92 L165 92" /><path d="M148 100 L164 104" />
+          </g>
+
+          <!-- 빨간 목줄 + 금방울 -->
+          <path d="M74 116 q31 16 62 0" fill="none" stroke="var(--red)"
+                stroke-width="9" stroke-linecap="round" />
+          <circle cx="105" cy="127" r="8" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="2" />
+          <path d="M105 127 l0 5 M101 131.5 q4 2.5 8 0" fill="none"
+                stroke="var(--gold-deep)" stroke-width="1.6" stroke-linecap="round" />
+
+          <!-- 오른손이 안고 있는 금화(고반): 福 글자 -->
+          <g transform="rotate(-12 62 162)">
+            <ellipse cx="62" cy="162" rx="30" ry="21" fill="var(--gold)"
+                     stroke="var(--gold-deep)" stroke-width="2.6" />
+            <ellipse cx="62" cy="162" rx="22" ry="14" fill="none"
+                     stroke="var(--gold-deep)" stroke-width="1.4" opacity="0.7" />
+            <text x="62" y="169" text-anchor="middle" class="coin-char">福</text>
+          </g>
+          <!-- 금화 위에 얹은 오른손 -->
+          <ellipse cx="76" cy="146" rx="12" ry="9" fill="#FFFDF8"
+                   stroke="var(--ink)" stroke-width="3" />
+          <path d="M71 141 l0 6 M77 140 l0 7" stroke="var(--ink)"
+                stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+
+        <!-- 고양이의 인사 말풍선 -->
+        <p class="bubble bubble-hello">
+          어서 오세요! 복을 부르는 고양이예요.
+          태어난 날을 알려주시면 만세력을 펼쳐 <strong>사주</strong>를 봐 드릴게요.
+        </p>
+      </div>
+    </header>
+
+    <!-- ══════════ 2. 입력 폼 ══════════ -->
+    <section class="card form-card" aria-labelledby="form-title">
+      <h1 id="form-title" class="section-title">언제 태어나셨나요?</h1>
+
+      <form id="saju-form" novalidate>
+        <div class="field">
+          <label for="birth-date">생년월일 <span class="hint">양력</span></label>
+          <input type="date" id="birth-date" name="birthDate" required
+                 min="1901-01-01" max="2049-12-31" />
+        </div>
+
+        <div class="field">
+          <label for="birth-time">태어난 시간</label>
+          <input type="time" id="birth-time" name="birthTime" required />
+          <label class="check">
+            <input type="checkbox" id="unknown-time" name="unknownTime" />
+            시간을 몰라요 <span class="hint">— 세 기둥으로 볼 수 있어요</span>
+          </label>
+        </div>
+
+        <fieldset class="field">
+          <legend>성별</legend>
+          <div class="pills" role="radiogroup">
+            <label class="pill"><input type="radio" name="gender" value="female" checked /><span>여성</span></label>
+            <label class="pill"><input type="radio" name="gender" value="male" /><span>남성</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="birth-city">태어난 지역 <span class="hint">진태양시 보정에 쓰여요</span></label>
+          <select id="birth-city" name="city"></select>
+        </div>
+
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+
+        <button type="submit" class="cta">사주 보기</button>
+      </form>
+    </section>
+
+    <!-- ══════════ 3. 결과: 명식표 ══════════ -->
+    <section class="result" id="result" aria-live="polite" hidden>
+      <p class="bubble bubble-result">당신의 <strong>명식</strong>이에요. 차근차근 살펴볼게요.</p>
+
+      <div class="card">
+        <h2 class="section-title" id="result-title">사주 명식</h2>
+        <p class="result-birth" id="result-birth"></p>
+
+        <!-- 명식표: 전통 방식대로 오른쪽 끝이 연주(태어난 해) -->
+        <table class="myeongsik" id="myeongsik">
+          <caption class="sr-only">사주 네 기둥 명식표. 오른쪽부터 연주, 월주, 일주, 시주 순서.</caption>
+          <thead>
+            <tr id="pillar-heads"></tr>
+          </thead>
+          <tbody>
+            <tr id="stem-row"></tr>
+            <tr id="branch-row"></tr>
+          </tbody>
+        </table>
+        <p class="note" id="time-note" hidden></p>
+
+        <!-- 오행 분포 -->
+        <h2 class="section-title">오행 분포</h2>
+        <div class="elements" id="elements"></div>
+        <p class="note" id="element-note"></p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>
+        간지 계산: <a href="https://github.com/urstory/manseryeok-js">manseryeok-js</a> ·
+        절기 시각: <a href="https://github.com/6tail/lunar-javascript">lunar-javascript</a> (MIT)
+      </p>
+      <p>사주아이의 풀이는 참고용이에요. 인생의 결정은 언제나 당신의 몫이랍니다.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
