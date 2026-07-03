@@ -1,0 +1,16 @@
+# ============================================================
+# wrangler.toml — Cloudflare Worker 배포 설정
+#
+# 배포:  npx wrangler deploy -c proxy/wrangler.toml
+# 키 등록(한 번만):
+#   grep '^GEMINI_API_KEY=' .env | cut -d= -f2- | \
+#     npx wrangler secret put GEMINI_API_KEY -c proxy/wrangler.toml
+# ============================================================
+name = "saju-i-proxy"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-07-01"
+
+# Smart Placement: 워커를 구글 API 서버(미국)와 가까운 곳에서 실행시켜
+# "User location is not supported" (Gemini 무료 등급 지역 차단)를 피한다
+[placement]
+mode = "smart"
