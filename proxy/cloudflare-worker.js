@@ -8,8 +8,9 @@
 // 배포 방법 (약 10분, 무료):
 //   1. cloudflare.com 가입 → Workers & Pages → Create Worker
 //   2. 이 파일 내용을 통째로 붙여넣고 Deploy
-//   3. Worker 설정 → Variables → Secrets 에 추가:
-//        ANTHROPIC_API_KEY = (발급받은 클로드 API 키)
+//   3. Worker 설정 → Variables → Secrets 에 둘 중 하나 추가:
+//        GEMINI_API_KEY = (무료 Gemini 키 — aistudio.google.com/apikey)
+//        ANTHROPIC_API_KEY = (클로드 키 — 품질 우선 옵션)
 //   4. 아래 ALLOWED_ORIGIN 을 내 사이트 주소로 수정
 //   5. js/config.js 의 INTERPRET_ENDPOINT 를
 //        'https://<워커이름>.<계정>.workers.dev/api/interpret' 로 수정
@@ -126,32 +127,60 @@ export default {
     } catch {}
     if (!prompt) return json(400, { error: '명식 데이터가 올바르지 않아요.' });
 
-    // 클로드 API 호출 — 키는 Worker의 Secret(env)에만 존재한다
-    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-8',
-        max_tokens: 3000,
-        thinking: { type: 'adaptive' },
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!apiRes.ok) {
-      return json(502, { error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' });
+    // AI 호출 — 키는 Worker의 Secret(env)에만 존재한다
+    // GEMINI_API_KEY가 있으면 Gemini(무료), 없으면 ANTHROPIC_API_KEY로 클로드
+    let text = '';
+    if (env.GEMINI_API_KEY) {
+      const model = env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+      const apiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-goog-api-key': env.GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+          }),
+        }
+      );
+      if (!apiRes.ok) {
+        return json(502, { error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요. (' + apiRes.status + ')' });
+      }
+      const data = await apiRes.json();
+      text = (data.candidates?.[0]?.content?.parts ?? [])
+        .map((p) => p.text ?? '')
+        .join('')
+        .trim();
+    } else {
+      const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-8',
+          max_tokens: 3000,
+          thinking: { type: 'adaptive' },
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (!apiRes.ok) {
+        return json(502, { error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' });
+      }
+      const data = await apiRes.json();
+      text = (data.content ?? [])
+        .filter((b) => b.type === 'text')
+        .map((b) => b.text)
+        .join('\n')
+        .trim();
     }
-    const data = await apiRes.json();
-    const text = (data.content ?? [])
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
     return json(200, { interpretation: text });
   },
 };

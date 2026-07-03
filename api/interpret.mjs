@@ -84,6 +84,56 @@ function buildPrompt(payload) {
   ].filter(Boolean).join('\n');
 }
 
+// ── AI 부르기 ① Gemini (무료 시작용) ──────────────────────────
+// Google AI Studio에서 무료 발급한 키를 .env의 GEMINI_API_KEY에 넣으면 사용된다.
+async function callGemini(prompt) {
+  const model = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY,
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = new Error(`Gemini ${res.status}`);
+    if (res.status === 400 || res.status === 401 || res.status === 403) err.code = 'BAD_KEY';
+    if (res.status === 429) err.code = 'RATE_LIMIT'; // 무료 한도 초과
+    throw err;
+  }
+  const data = await res.json();
+  return (data.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? '')
+    .join('')
+    .trim();
+}
+
+// ── AI 부르기 ② 클로드 (품질 우선 옵션) ───────────────────────
+async function callClaude(prompt) {
+  const client = new Anthropic(); // 키는 환경변수에서 자동으로 읽는다
+  const response = await client.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 3000,
+    thinking: { type: 'adaptive' }, // 해석 전에 스스로 생각할 여유를 준다
+    system: SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return response.content
+    .filter((block) => block.type === 'text')
+    .map((block) => block.text)
+    .join('\n')
+    .trim();
+}
+
 // ── HTTP 요청 처리 (serve.mjs가 POST /api/interpret 에서 호출) ──
 export async function handleInterpret(req, res) {
   const reply = (status, obj) => {
@@ -93,9 +143,10 @@ export async function handleInterpret(req, res) {
     res.end(JSON.stringify(obj));
   };
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // 키가 하나도 없으면 안내 (Gemini는 무료 발급 가능)
+  if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
     return reply(503, {
-      error: 'API 키가 설정되지 않았어요. 프로젝트 폴더의 .env.example을 복사해 .env를 만들고 키를 넣은 뒤 서버를 다시 켜 주세요.',
+      error: 'API 키가 설정되지 않았어요. aistudio.google.com/apikey 에서 무료 Gemini 키를 발급받아, .env.example을 복사한 .env 파일에 넣고 서버를 다시 켜 주세요.',
     });
   }
 
@@ -115,29 +166,18 @@ export async function handleInterpret(req, res) {
   if (!prompt) return reply(400, { error: '명식 데이터가 올바르지 않아요.' });
 
   try {
-    const client = new Anthropic(); // 키는 환경변수에서 자동으로 읽는다
-    const response = await client.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 3000,
-      thinking: { type: 'adaptive' }, // 해석 전에 스스로 생각할 여유를 준다
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    // 응답에서 글 부분만 모은다
-    const text = response.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('\n')
-      .trim();
+    // Gemini 키가 있으면 Gemini(무료), 아니면 클로드를 쓴다
+    const text = process.env.GEMINI_API_KEY
+      ? await callGemini(prompt)
+      : await callClaude(prompt);
     if (!text) return reply(502, { error: '해석 생성에 실패했어요. 잠시 후 다시 시도해 주세요.' });
     return reply(200, { interpretation: text });
   } catch (err) {
     // 에러 종류별로 사람이 이해할 수 있는 메시지로 바꾼다
-    if (err instanceof Anthropic.AuthenticationError) {
+    if (err instanceof Anthropic.AuthenticationError || err.code === 'BAD_KEY') {
       return reply(401, { error: 'API 키가 올바르지 않아요. .env의 키를 확인해 주세요.' });
     }
-    if (err instanceof Anthropic.RateLimitError) {
+    if (err instanceof Anthropic.RateLimitError || err.code === 'RATE_LIMIT') {
       return reply(429, { error: '요청이 많아 잠시 쉬어야 해요. 1분 뒤에 다시 시도해 주세요.' });
     }
     console.error('해석 프록시 오류:', err.message);

@@ -12,10 +12,12 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { handleInterpret } from './api/interpret.mjs';
 
 const PORT = 8890;
-const ROOT = new URL('.', import.meta.url).pathname;
+// fileURLToPath: 폴더 이름에 한글·공백이 있어도 경로를 올바르게 읽는다
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
 
 // 파일 확장자 → 브라우저에게 알려줄 파일 종류
 const MIME = {
