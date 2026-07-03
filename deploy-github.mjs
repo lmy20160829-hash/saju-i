@@ -30,6 +30,7 @@ const FILES = [
   'sw.js',
   'package.json',
   'package-lock.json',
+  'vercel.json',
   'serve.mjs',
   'test-core.mjs',
   'test-interpret.mjs',

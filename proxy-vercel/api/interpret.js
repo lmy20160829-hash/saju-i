@@ -11,7 +11,15 @@
 // ============================================================
 
 // 해석 요청을 허용할 사이트 주소
+// (GitHub Pages 본진 + 같은 계정의 Vercel 사이트 — 그 밖의 사이트는 거부)
 const ALLOWED_ORIGIN = 'https://lmy20160829-hash.github.io';
+function corsOrigin(req) {
+  const origin = req.headers.origin ?? '';
+  if (origin === ALLOWED_ORIGIN) return origin;
+  if (origin === 'https://saju-i.vercel.app') return origin;
+  if (/^https:\/\/[a-z0-9-]+-mylee-projects\.vercel\.app$/.test(origin)) return origin;
+  return ALLOWED_ORIGIN;
+}
 
 // ── 간지 검증용 미니 표 (api/interpret.mjs와 동일 데이터) ──
 const STEMS = {
@@ -255,14 +263,15 @@ function buildPrompt(payload) {
   return { system: `${PERSONA_RULES}\n\n${topic.format}`, prompt };
 }
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+function setCors(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin(req));
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(404).json({ error: '사주아이 해석 프록시입니다.' });
   if (!process.env.GEMINI_API_KEY) return res.status(503).json({ error: 'API 키 미설정' });
