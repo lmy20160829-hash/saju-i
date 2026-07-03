@@ -184,9 +184,14 @@
         <div class="elements" id="elements"></div>
         <p class="note" id="element-note"></p>
 
-        <!-- AI 해석: 계산된 명식만 근거로 클로드가 풀이 -->
+        <!-- AI 해석: 계산된 명식만 근거로 AI가 풀이 -->
+        <!-- 테마별 해설: 주제를 골라 깊이 풀이 받는 구성 (운세 앱 벤치마킹) -->
         <h2 class="section-title">고양이의 풀이</h2>
-        <button type="button" id="interpret-btn" class="cta cta-paw">🐾 사주 풀이 듣기</button>
+        <p class="topic-hint">
+          궁금한 주제를 골라 주세요. 주제마다 고양이가 만세력을 다시 읽고
+          <strong>따로 깊이</strong> 풀이해 드려요.
+        </p>
+        <div class="topic-chips" id="topic-chips" role="group" aria-label="풀이 주제 고르기"></div>
         <p class="interpret-loading" id="interpret-loading" hidden>
           <span class="paw-dots" aria-hidden="true"></span>
           고양이가 만세력을 읽고 있어요…

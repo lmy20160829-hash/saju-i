@@ -32,6 +32,7 @@ const FILES = [
   'package-lock.json',
   'serve.mjs',
   'test-core.mjs',
+  'test-interpret.mjs',
   'verify.mjs',
   'deploy-github.mjs',
   'api/interpret.mjs',

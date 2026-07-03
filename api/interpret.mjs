@@ -15,12 +15,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { STEMS, BRANCHES, tenGod } from '../js/saju-core.js';
 
-// ── 마네키네코 해석가의 성격과 규칙 (시스템 프롬프트) ──────────
-const SYSTEM_PROMPT = `당신은 사주명리 웹앱 '사주아이'의 해석가입니다.
+// ── 마네키네코 해석가의 성격과 규칙 (모든 주제 공통) ──────────
+const PERSONA_RULES = `당신은 사주명리 웹앱 '사주아이'의 해석가입니다.
 페르소나: 복을 부르는 하얀 고양이 마네키네코. 따뜻하고 다정한 존댓말로 정성껏 말하지만, 내용은 진지한 정통 명리학 해석입니다.
 
 반드시 지킬 규칙:
-- 제공된 명식 데이터(간지, 일간, 오행 분포, 십성)에 있는 사실만 근거로 해석합니다. 대운·세운·신살·지장간·12운성은 데이터에 없으므로 언급하지 않습니다.
+- 제공된 명식 데이터(간지, 일간, 오행 분포, 십성 — '올해의 세운'이 함께 주어지면 그것까지)에 있는 사실만 근거로 해석합니다. 그 밖의 대운·신살·지장간·12운성은 데이터에 없으므로 언급하지 않습니다.
 - 궁위(연주=조상·초년, 월주=부모·성장 환경, 일지=배우자 자리, 시주=자녀·말년)는 제공된 간지에 근거해 해석할 수 있습니다. 시주가 없으면 자녀·말년 이야기는 하지 않습니다.
 - 개수와 숫자는 제공된 값을 그대로 인용하고, 직접 다시 세지 않습니다.
 - 데이터로 알 수 없는 것(재물 액수, 수명, 질병, 특정 연도의 사건)은 절대 단정하지 않습니다.
@@ -35,8 +35,23 @@ const SYSTEM_PROMPT = `당신은 사주명리 웹앱 '사주아이'의 해석가
 - 일간의 강약(주변 오행이 나를 돕는지 억누르는지)을 근거와 함께 짚어 주면 좋습니다.
 - 부족한 오행은 전통 오행 상식 수준의 생활 처방(어울리는 색, 활동, 계절·시간대 등)을 "~해 보세요" 정도로 부드럽게 제안합니다.
 - 뻔한 덕담 대신, 이 명식이라서 나오는 구체적인 이야기를 씁니다.
+- 출력은 첫 절 제목("### ")으로 바로 시작합니다. 절 제목 앞에 인사말·서문을 쓰지 않습니다.`;
 
-출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 10절):
+// ── 테마별 풀이 주제표 ─────────────────────────────────────────
+// 점신 같은 운세 앱을 벤치마킹한 "테마별 해설" 구성.
+// 브라우저는 topic 이름만 보내고, 주제별 지시문은 전부 서버가 갖는다.
+// (화이트리스트에 없는 topic은 거부 → 프롬프트 조작 방지 유지)
+//
+// 각 주제의 첫 절은 "한 줄 요약 + 키워드 3개"로 시작한다.
+// 운세 앱들이 결과 첫 화면에 요약·키워드를 먼저 보여주는 방식을 따랐다.
+const SUMMARY_RULE =
+  '첫 절의 본문 첫 줄은 반드시 "**키워드**: #키워드 #키워드 #키워드" 형태로 이 주제의 핵심 키워드 3개를 적고, 그다음 줄부터 요약을 씁니다.';
+
+export const TOPICS = {
+  // 전체 풀이 — 기존 10절 정통 해석 (기본값)
+  overall: {
+    label: '전체 풀이',
+    format: `출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 10절):
 ### (총평 — 명식 전체의 형상을 담은 은유)
 ### (일간과 일주 — 타고난 성품)
 ### (내면과 삶의 태도 — 강점과 그림자)
@@ -47,11 +62,155 @@ const SYSTEM_PROMPT = `당신은 사주명리 웹앱 '사주아이'의 해석가
 ### (가족 — 뿌리와 어린 시절)
 ### (사람들 속의 나 — 인간관계)
 ### (마네키네코의 당부)
-각 절 3~6문장, 전체 2600~3600자의 한국어. 마지막 당부는 앞의 풀이를 한 문장으로 안아 주고, 실천할 수 있는 조언 하나로 따뜻하게 마무리합니다.`;
+각 절 3~6문장, 전체 2600~3600자의 한국어. 마지막 당부는 앞의 풀이를 한 문장으로 안아 주고, 실천할 수 있는 조언 하나로 따뜻하게 마무리합니다.`,
+  },
+
+  // 재물운 — 재성(정재·편재) 구조 중심의 깊이 풀이
+  wealth: {
+    label: '재물운',
+    format: `이번 요청은 '재물운' 한 주제만 깊이 파는 테마 풀이입니다.
+재성(편재·정재)의 유무와 위치, 식상이 재를 낳는 흐름(식상생재), 비겁이 재를 나누는 구조 등
+재물과 관련된 명리 구조를 중심으로, 전체 풀이보다 한 걸음 더 깊게 해석합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 이 명식의 재물 그릇을 은유 한 문장으로)
+### (타고난 재물 그릇 — 재성의 모양과 자리)
+### (돈이 들어오는 길 — 버는 방식과 재능)
+### (돈이 새기 쉬운 곳 — 조심할 습관)
+### (마네키네코의 재물 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어. 재물 '액수'나 '시기'는 절대 단정하지 않습니다.`,
+  },
+
+  // 연애·결혼운 — 배우자 자리(일지)와 배우자 별 중심
+  love: {
+    label: '연애·결혼운',
+    format: `이번 요청은 '연애·결혼운' 한 주제만 깊이 파는 테마 풀이입니다.
+일지(배우자 자리)의 간지, 성별에 따른 배우자 별(남성은 재성, 여성은 관성)의 유무와 위치,
+식상(표현·애정 표현)의 모양을 중심으로, 전체 풀이보다 한 걸음 더 깊게 해석합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 이 명식의 사랑의 결을 은유 한 문장으로)
+### (사랑할 때의 나 — 애정 표현 방식)
+### (배우자 자리의 풍경 — 일지가 말하는 것)
+### (관계에서 반복되기 쉬운 것 — 빛과 그림자)
+### (마네키네코의 연애 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어. 결혼 '시기'나 상대의 '조건'은 절대 단정하지 않습니다.`,
+  },
+
+  // 직업·일운 — 관성(직장)·식상(재능)·인성(공부) 구조 중심
+  career: {
+    label: '일·직업운',
+    format: `이번 요청은 '일과 직업운' 한 주제만 깊이 파는 테마 풀이입니다.
+관성(조직·직장), 식상(재능·표현), 인성(공부·자격), 비겁(독립심·동업)의 구성을 중심으로
+어울리는 일의 결, 일하는 방식, 조직 생활과 독립의 적성을 전체 풀이보다 한 걸음 더 깊게 해석합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 이 명식의 일하는 모습을 은유 한 문장으로)
+### (타고난 일머리 — 재능의 결)
+### (어울리는 일터의 모양 — 조직과 독립 사이)
+### (일에서 걸려 넘어지기 쉬운 돌부리)
+### (마네키네코의 커리어 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어. 특정 직업을 '해야 한다'고 단정하지 말고, 일의 '결'과 '방식'으로 이야기합니다.`,
+  },
+
+  // 건강·생활 리듬 — 오행 균형 기반의 양생 처방 (의학적 단정 금지)
+  health: {
+    label: '건강·생활 리듬',
+    format: `이번 요청은 '건강과 생활 리듬' 한 주제만 깊이 파는 테마 풀이입니다.
+오행 분포의 치우침(넘치는 기운, 부족한 기운)을 중심으로 전통 오행 양생(養生) 상식 수준의
+생활 리듬 처방을 전체 풀이보다 한 걸음 더 깊게 풀어 줍니다.
+추가로 반드시 지킬 것: 질병 진단·의학적 조언은 하지 않습니다. 병명·장기 이름을 단정적으로 연결하지 않습니다.
+"~한 기운이 치우쳐 있으니 ~한 생활을 해 보세요" 수준의 부드러운 생활 제안만 합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 이 명식의 기운 균형을 은유 한 문장으로)
+### (기운의 저울 — 넘치는 것과 모자란 것)
+### (넘치는 기운 다스리기)
+### (모자란 기운 채우기 — 색·계절·시간대·활동)
+### (마네키네코의 하루 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어.`,
+  },
+
+  // 인간관계운 — 비겁·십성 구성으로 보는 사람 사이의 나
+  people: {
+    label: '인간관계운',
+    format: `이번 요청은 '인간관계운' 한 주제만 깊이 파는 테마 풀이입니다.
+비겁(동료·형제), 식상(표현), 관성(예의·규율), 인성(받아들임)의 구성과 궁위(연주=윗사람·뿌리,
+월주=부모·사회생활의 문)를 중심으로 사람 사이에서의 나를 전체 풀이보다 한 걸음 더 깊게 해석합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 사람들 속 이 명식의 자리를 은유 한 문장으로)
+### (사람을 대하는 기본 자세)
+### (나와 결이 맞는 사람, 나를 힘들게 하는 관계)
+### (관계에서 반복되기 쉬운 패턴)
+### (마네키네코의 관계 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어.`,
+  },
+
+  // 학업·시험운 — 인성(공부)·식상(응용)·관성(시험·평가) 구조 중심
+  study: {
+    label: '학업·시험운',
+    format: `이번 요청은 '학업·시험운' 한 주제만 깊이 파는 테마 풀이입니다.
+인성(공부·받아들이는 힘), 식상(응용·표현하는 힘), 관성(시험·평가를 견디는 힘)의 구성을 중심으로
+배우는 방식과 실력이 붙는 공부법을 전체 풀이보다 한 걸음 더 깊게 해석합니다.
+추가로 반드시 지킬 것: 합격·불합격을 단정하지 않습니다. 공부의 '결'과 '방식'으로만 이야기합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 이 명식의 공부 그릇을 은유 한 문장으로)
+### (타고난 공부 머리 — 배우는 방식의 결)
+### (실력이 붙는 공부법)
+### (시험장에서의 나 — 집중과 긴장 사이)
+### (마네키네코의 공부 처방 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어.`,
+  },
+
+  // 올해의 운세 — 세운 간지는 서버가 계산해서 데이터로 넣어 준다
+  newyear: {
+    label: '올해의 운세',
+    format: `이번 요청은 '올해의 운세(세운)' 한 주제만 깊이 파는 테마 풀이입니다.
+데이터로 제공된 '올해의 세운' 간지가 나의 일간·명식 구조와 어떤 관계(십성)로 만나는지를 중심으로,
+올해 힘이 실리는 영역과 조심스럽게 다룰 영역을 해석합니다.
+추가로 반드시 지킬 것: 특정 월·날짜의 사건을 단정하지 않습니다. 올해 전체의 '기류'와 '경향'으로만 이야기합니다.
+${SUMMARY_RULE}
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작, 총 5절):
+### (한 줄 요약 — 올해의 기운과 나의 만남을 은유 한 문장으로)
+### (올해의 기운이 나에게 들어오는 모양 — 세운과 일간의 관계)
+### (올해 힘이 실리는 영역)
+### (올해 한 템포 쉬어 갈 영역)
+### (마네키네코의 올해 당부 — 실천 조언)
+각 절 3~6문장, 전체 1400~2000자의 한국어.`,
+  },
+};
+
+// ── 올해의 세운(년운) 간지 계산 ────────────────────────────────
+// 육십갑자는 60년 주기로 도는 단순 산수라 표 없이 계산할 수 있다.
+// (서기 4년이 갑자년 — 그래서 (연도-4)를 10과 12로 나눈 나머지를 쓴다)
+// 명리의 새해는 1월 1일이 아니라 입춘(2월 4일 무렵)이므로,
+// 입춘 전이면 아직 지난해의 세운으로 본다. (경계 시각은 날짜 단위 근사)
+const STEM_LIST = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const BRANCH_LIST = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+export function currentSeun(now = new Date()) {
+  // 서버가 어느 시간대에 있든 한국 시각 기준으로 날짜를 읽는다
+  const kst = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60 * 1000);
+  let year = kst.getFullYear();
+  const month = kst.getMonth() + 1;
+  if (month === 1 || (month === 2 && kst.getDate() < 4)) year -= 1;
+  const stemHanja = STEM_LIST[(((year - 4) % 10) + 10) % 10];
+  const branchHanja = BRANCH_LIST[(((year - 4) % 12) + 12) % 12];
+  return { year, stemHanja, branchHanja };
+}
 
 // ── 브라우저가 보낸 명식을 검증하고 프롬프트 재료로 변환 ──────
 // 허용된 간지 한자만 통과시킨다. (표에 없는 글자 = 거부)
-function buildPrompt(payload) {
+// topic까지 검증해서 {system, prompt} 한 쌍을 돌려준다.
+// (export는 test-interpret.mjs가 검증할 때 쓰기 위한 것)
+export function buildPrompt(payload) {
+  // 주제는 화이트리스트에 있는 것만 허용 (없으면 전체 풀이)
+  const topicKey = payload?.topic ?? 'overall';
+  const topic = TOPICS[topicKey];
+  if (!topic) return null;
+
   const PILLAR_NAMES = { year: '연주', month: '월주', day: '일주', hour: '시주' };
   const pillars = payload?.pillars ?? {};
   const dayPair = pillars.day;
@@ -90,19 +249,37 @@ function buildPrompt(payload) {
   const gender = payload.gender === 'male' ? '남성' : '여성';
   const unknownTime = !pillars.hour;
 
-  return [
-    '다음 명식을 해석해 주세요.',
+  // '올해의 운세' 주제면 세운 간지를 서버가 계산해 데이터에 추가한다.
+  // (AI가 스스로 추정하지 않도록, 세운도 계산값으로 넣어 주는 것)
+  const seunLines = [];
+  if (topicKey === 'newyear') {
+    const seun = currentSeun();
+    const sStem = STEMS[seun.stemHanja];
+    const sBranch = BRANCHES[seun.branchHanja];
+    seunLines.push(
+      `- 올해의 세운: ${seun.year}년 ${seun.stemHanja}${seun.branchHanja} (${sStem.ko}${sBranch.ko}) — ` +
+      `천간 ${sStem.ko}(${sStem.element}, ${sStem.yang ? '양' : '음'})[나에게 ${tenGod(dayStem, seun.stemHanja)}], ` +
+      `지지 ${sBranch.ko}(${sBranch.element})[나에게 ${tenGod(dayStem, sBranch.mainStem)}]`
+    );
+  }
+
+  const prompt = [
+    `다음 명식을 '${topic.label}' 주제로 해석해 주세요.`,
     ...lines,
+    ...seunLines,
     `- 일간(나): ${dayStem} ${me.ko}${me.element} (${me.yang ? '양' : '음'})`,
     `- 오행 분포 (총 ${chars}자): 목 ${counts.목} · 화 ${counts.화} · 토 ${counts.토} · 금 ${counts.금} · 수 ${counts.수}`,
     `- 성별: ${gender}`,
     unknownTime ? '- 태어난 시간을 몰라 시주 없이 세 기둥으로 본 명식입니다.' : '',
   ].filter(Boolean).join('\n');
+
+  // 시스템 프롬프트 = 공통 페르소나·규칙 + 이 주제의 출력 형식
+  return { system: `${PERSONA_RULES}\n\n${topic.format}`, prompt };
 }
 
 // ── AI 부르기 ① Gemini (무료 시작용) ──────────────────────────
 // Google AI Studio에서 무료 발급한 키를 .env의 GEMINI_API_KEY에 넣으면 사용된다.
-async function callGemini(prompt) {
+async function callGemini(system, prompt) {
   // 무료 한도는 "모델별로 하루치"가 따로 있다.
   // 주 모델이 한도에 닿으면(429) 예비 모델로 한 번 더 시도한다.
   const primary = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
@@ -121,7 +298,7 @@ async function callGemini(prompt) {
             'x-goog-api-key': process.env.GEMINI_API_KEY,
           },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            systemInstruction: { parts: [{ text: system }] },
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             generationConfig: { maxOutputTokens: 8192, temperature: 0.8 },
           }),
@@ -147,13 +324,13 @@ async function callGemini(prompt) {
 }
 
 // ── AI 부르기 ② 클로드 (품질 우선 옵션) ───────────────────────
-async function callClaude(prompt) {
+async function callClaude(system, prompt) {
   const client = new Anthropic(); // 키는 환경변수에서 자동으로 읽는다
   const response = await client.messages.create({
     model: 'claude-opus-4-8',
     max_tokens: 3000,
     thinking: { type: 'adaptive' }, // 해석 전에 스스로 생각할 여유를 준다
-    system: SYSTEM_PROMPT,
+    system,
     messages: [{ role: 'user', content: prompt }],
   });
   return response.content
@@ -186,19 +363,19 @@ export async function handleInterpret(req, res) {
     if (raw.length > 10_000) return reply(413, { error: '요청이 너무 커요.' });
   }
 
-  let prompt;
+  let built;
   try {
-    prompt = buildPrompt(JSON.parse(raw));
+    built = buildPrompt(JSON.parse(raw));
   } catch {
-    prompt = null;
+    built = null;
   }
-  if (!prompt) return reply(400, { error: '명식 데이터가 올바르지 않아요.' });
+  if (!built) return reply(400, { error: '명식 데이터가 올바르지 않아요.' });
 
   try {
     // Gemini 키가 있으면 Gemini(무료), 아니면 클로드를 쓴다
     const text = process.env.GEMINI_API_KEY
-      ? await callGemini(prompt)
-      : await callClaude(prompt);
+      ? await callGemini(built.system, built.prompt)
+      : await callClaude(built.system, built.prompt);
     if (!text) return reply(502, { error: '해석 생성에 실패했어요. 잠시 후 다시 시도해 주세요.' });
     return reply(200, { interpretation: text });
   } catch (err) {
