@@ -14,6 +14,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleInterpret } from './api/interpret.mjs';
+import { handleTts } from './api/tts.mjs';
 
 const PORT = 8890;
 // fileURLToPath: 폴더 이름에 한글·공백이 있어도 경로를 올바르게 읽는다
@@ -36,9 +37,12 @@ createServer(async (req, res) => {
     // 주소에서 물음표(?) 뒷부분은 떼고 파일 경로만 사용
     let path = new URL(req.url, 'http://x').pathname;
 
-    // AI 해석 요청은 파일이 아니라 프록시(api/interpret.mjs)가 처리
+    // AI 해석·음성 요청은 파일이 아니라 프록시(api/ 폴더)가 처리
     if (path === '/api/interpret' && req.method === 'POST') {
       return await handleInterpret(req, res);
+    }
+    if (path === '/api/tts' && req.method === 'POST') {
+      return await handleTts(req, res);
     }
 
     if (path === '/') path = '/index.html';

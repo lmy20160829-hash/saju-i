@@ -117,12 +117,70 @@ function corsHeaders() {
   };
 }
 
+// ── 음성 합성(TTS): PCM 파형에 WAV 머리표를 붙여 브라우저가 틀 수 있게 ──
+function pcmToWav(pcm, sampleRate) {
+  const byteRate = (sampleRate * 16) / 8; // 모노 16비트
+  const buf = new ArrayBuffer(44 + pcm.length);
+  const v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE');
+  w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sampleRate, true); v.setUint32(28, byteRate, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, pcm.length, true);
+  new Uint8Array(buf, 44).set(pcm);
+  return new Uint8Array(buf);
+}
+
+async function handleTts(request, env) {
+  const json = (status, obj) =>
+    new Response(JSON.stringify(obj), {
+      status,
+      headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders() },
+    });
+  if (!env.GEMINI_API_KEY) return json(503, { error: 'TTS 미설정' });
+
+  let text = '';
+  try {
+    text = String((await request.json()).text ?? '').trim().slice(0, 3500);
+  } catch {}
+  if (!text) return json(400, { error: '읽을 글이 없어요.' });
+
+  const res = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+      (env.GEMINI_TTS_MODEL ?? 'gemini-2.5-flash-preview-tts') + ':generateContent',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: '다정하고 차분한 목소리로, 사주 풀이를 들려주듯 또박또박 읽어주세요:\n\n' + text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+        },
+      }),
+    }
+  );
+  if (!res.ok) return json(res.status === 429 ? 429 : 502, { error: 'TTS 실패 — 기기 음성으로 대체' });
+  const data = await res.json();
+  const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+  if (!part) return json(502, { error: 'TTS 실패 — 기기 음성으로 대체' });
+  const rate = Number(part.inlineData.mimeType?.match(/rate=(\d+)/)?.[1] ?? 24000);
+  const pcm = Uint8Array.from(atob(part.inlineData.data), (c) => c.charCodeAt(0));
+  return new Response(pcmToWav(pcm, rate), {
+    headers: { 'Content-Type': 'audio/wav', ...corsHeaders() },
+  });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders() });
     }
     const url = new URL(request.url);
+    if (request.method === 'POST' && url.pathname === '/api/tts') {
+      return handleTts(request, env);
+    }
     if (request.method !== 'POST' || url.pathname !== '/api/interpret') {
       return new Response('사주아이 해석 프록시입니다.', { status: 404, headers: corsHeaders() });
     }

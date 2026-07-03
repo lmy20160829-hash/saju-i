@@ -192,7 +192,11 @@
           고양이가 만세력을 읽고 있어요…
         </p>
         <div class="interpret-text" id="interpret-result" hidden></div>
-        <button type="button" id="tts-btn" class="tts-btn" hidden>🔊 풀이 읽어주기</button>
+        <div class="tts-row">
+          <button type="button" id="tts-btn" class="tts-btn" hidden>🔊 풀이 읽어주기</button>
+          <button type="button" id="tts-speed" class="tts-btn tts-speed" hidden
+                  aria-label="읽기 속도 바꾸기">1×</button>
+        </div>
         <p class="form-error" id="interpret-error" role="alert" hidden></p>
         <p class="note">풀이는 위 명식 데이터만 근거로 하며, 참고용이에요.</p>
       </div>
