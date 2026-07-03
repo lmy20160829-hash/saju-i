@@ -12,6 +12,7 @@ const btn = document.getElementById('interpret-btn');
 const loading = document.getElementById('interpret-loading');
 const resultBox = document.getElementById('interpret-result');
 const errorBox = document.getElementById('interpret-error');
+const ttsBtn = document.getElementById('tts-btn');
 
 // 최근 계산 결과 (app.js가 계산할 때마다 갱신해 준다)
 let currentSaju = null;
@@ -20,10 +21,12 @@ let currentGender = 'female';
 export function setInterpretTarget(saju, gender) {
   currentSaju = saju;
   currentGender = gender;
-  // 새로 계산했으면 이전 해석은 지운다
+  // 새로 계산했으면 이전 해석은 지우고, 읽어주던 목소리도 멈춘다
+  stopSpeaking();
   resultBox.hidden = true;
   resultBox.innerHTML = '';
   errorBox.hidden = true;
+  ttsBtn.hidden = true;
   btn.hidden = false;
   btn.disabled = false;
 }
@@ -65,6 +68,8 @@ btn.addEventListener('click', async () => {
     resultBox.innerHTML = renderMarkdownLite(data.interpretation);
     resultBox.hidden = false;
     btn.hidden = true; // 같은 명식을 중복 요청하지 않게
+    // 텍스트와 함께 "읽어주기" 버튼도 보여준다 (지원 브라우저만)
+    if ('speechSynthesis' in window) ttsBtn.hidden = false;
   } catch (err) {
     errorBox.textContent =
       err instanceof TypeError
@@ -76,6 +81,43 @@ btn.addEventListener('click', async () => {
     loading.hidden = true;
   }
 });
+
+// ── 풀이 읽어주기 (브라우저 내장 음성 합성 — 무료, 키 불필요) ──
+// 텍스트는 화면에 그대로 두고, 같은 내용을 한국어 음성으로 읽는다.
+let speaking = false;
+
+function stopSpeaking() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  speaking = false;
+  ttsBtn.textContent = '🔊 풀이 읽어주기';
+}
+
+ttsBtn.addEventListener('click', () => {
+  if (speaking) return stopSpeaking(); // 읽는 중에 누르면 멈춤
+
+  // 화면의 풀이 글을 그대로 가져와 읽는다 (마크다운 기호 없이)
+  const text = resultBox.textContent.trim();
+  if (!text) return;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ko-KR';
+  utterance.rate = 0.95; // 살짝 차분한 속도
+  // 한국어 목소리가 설치되어 있으면 골라 쓴다
+  const koVoice = window.speechSynthesis
+    .getVoices()
+    .find((v) => v.lang.startsWith('ko'));
+  if (koVoice) utterance.voice = koVoice;
+  utterance.onend = stopSpeaking;
+  utterance.onerror = stopSpeaking;
+
+  window.speechSynthesis.cancel(); // 혹시 남아 있던 소리 정리
+  window.speechSynthesis.speak(utterance);
+  speaking = true;
+  ttsBtn.textContent = '⏹ 그만 읽기';
+});
+
+// 페이지를 떠나면 소리도 멈춘다
+window.addEventListener('pagehide', stopSpeaking);
 
 // ── 아주 작은 마크다운 변환기 ─────────────────────────────────
 // AI가 주는 글은 "### 소제목"과 "**강조**"만 쓰므로 그것만 처리한다.

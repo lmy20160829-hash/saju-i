@@ -389,6 +389,23 @@ td.empty-pillar .char-hanja { color: var(--gold-pale); }
 .interpret-text p { margin: 6px 0; }
 .interpret-text strong { color: var(--gold-deep); }
 
+/* 풀이 읽어주기 버튼 — 텍스트 아래 작은 알약 */
+.tts-btn {
+  display: block;
+  margin: 12px auto 0;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+  background: var(--card);
+  border: 2px solid var(--gold);
+  border-radius: 999px;
+  padding: 9px 22px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.tts-btn:hover { background: var(--gold-pale); }
+
 /* ══════════ 오행 분포 미터 ══════════ */
 .elements { display: grid; gap: 10px; }
 
