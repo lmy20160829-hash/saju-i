@@ -17,6 +17,7 @@
     "lunar-javascript": "^1.7.7"
   },
   "devDependencies": {
-    "puppeteer-core": "^25.3.0"
+    "puppeteer-core": "^25.3.0",
+    "wrangler": "^4.107.0"
   }
 }

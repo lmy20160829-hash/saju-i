@@ -132,21 +132,27 @@ export default {
     let text = '';
     if (env.GEMINI_API_KEY) {
       const model = env.GEMINI_MODEL ?? 'gemini-2.5-flash';
-      const apiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-goog-api-key': env.GEMINI_API_KEY,
-          },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-          }),
-        }
-      );
+      // 구글 서버가 잠깐 바쁠 때(503)가 있어 최대 3번 시도한다
+      let apiRes;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        apiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'x-goog-api-key': env.GEMINI_API_KEY,
+            },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+            }),
+          }
+        );
+        if (apiRes.status !== 503 && apiRes.status !== 500) break;
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
       if (!apiRes.ok) {
         return json(502, { error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요. (' + apiRes.status + ')' });
       }

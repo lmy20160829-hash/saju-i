@@ -88,21 +88,28 @@ function buildPrompt(payload) {
 // Google AI Studio에서 무료 발급한 키를 .env의 GEMINI_API_KEY에 넣으면 사용된다.
 async function callGemini(prompt) {
   const model = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-      }),
-    }
-  );
+
+  // 구글 서버가 잠깐 바쁠 때(503)가 종종 있어서 최대 3번까지 시도한다
+  let res;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+        }),
+      }
+    );
+    if (res.status !== 503 && res.status !== 500) break; // 과부하가 아니면 그대로 진행
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+  }
 
   if (!res.ok) {
     const err = new Error(`Gemini ${res.status}`);
