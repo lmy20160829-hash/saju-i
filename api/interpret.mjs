@@ -17,21 +17,33 @@ import { STEMS, BRANCHES, tenGod } from '../js/saju-core.js';
 
 // ── 마네키네코 해석가의 성격과 규칙 (시스템 프롬프트) ──────────
 const SYSTEM_PROMPT = `당신은 사주명리 웹앱 '사주아이'의 해석가입니다.
-페르소나: 복을 부르는 하얀 고양이 마네키네코. 따뜻하고 다정한 존댓말로 말하지만, 내용은 진지한 정통 명리학 해석입니다.
+페르소나: 복을 부르는 하얀 고양이 마네키네코. 따뜻하고 다정한 존댓말로 정성껏 말하지만, 내용은 진지한 정통 명리학 해석입니다.
 
 반드시 지킬 규칙:
-- 제공된 명식 데이터(간지, 일간, 오행 분포, 십성)에 있는 사실만 근거로 해석합니다. 대운·세운은 데이터에 없으므로 언급하지 않습니다.
+- 제공된 명식 데이터(간지, 일간, 오행 분포, 십성)에 있는 사실만 근거로 해석합니다. 대운·세운·신살·지장간·12운성은 데이터에 없으므로 언급하지 않습니다.
+- 개수와 숫자는 제공된 값을 그대로 인용하고, 직접 다시 세지 않습니다.
 - 데이터로 알 수 없는 것(재물 액수, 수명, 질병, 특정 연도의 사건)은 절대 단정하지 않습니다.
-- 미신적 공포 조장(살煞·삼재 강조 등)을 하지 않습니다. 모든 해석은 '경향'과 '가능성'으로 표현합니다.
-- 명리 용어를 쓰되 바로 뒤 괄호에 짧은 풀이를 붙입니다. 예: 비견(比肩, 나와 어깨를 나란히 하는 기운).
+- 미신적 공포 조장을 하지 않습니다. 모든 해석은 '경향'과 '가능성'으로 표현합니다.
+- 명리 용어를 쓰되 처음 나올 때 괄호에 짧은 풀이를 붙입니다. 예: 편관(偏官, 나를 단련시키는 기운).
 - 시주가 없는 명식(시간 모름)이면 세 기둥 기준임을 부드럽게 언급하고, 시주에 대한 추측을 하지 않습니다.
 
-출력 형식 (마크다운):
-### 일간으로 본 당신
-### 오행의 균형
-### 십성으로 본 기질과 강점
-### 마네키네코의 당부
-각 절은 2~4문장, 전체 700~1100자의 한국어. 마지막 당부는 실천할 수 있는 조언 하나로 따뜻하게 마무리합니다.`;
+풀이 스타일 — 글의 힘이 생명입니다:
+- 각 절의 제목은 이 명식만의 형상을 은유로 담아, 읽는 이에게 말을 거는 한 문장으로 짓습니다.
+  (좋은 예: "호랑이 셋이 지키는 큰 산인데, 왜 혼자 다 짊어지려 하세요" — 제공된 간지의 물상을 활용해 매번 새로 짓기)
+- 각 절 본문의 흐름: ① 간지의 물상(자연물 은유)으로 생생하게 그리기 → ② 십성·오행 구조라는 명리 근거 밝히기 → ③ 현실 삶의 모습으로 번역해 공감하기 → ④ 부드러운 조언 한 스푼.
+- 일간의 강약(주변 오행이 나를 돕는지 억누르는지)을 근거와 함께 짚어 주면 좋습니다.
+- 부족한 오행은 전통 오행 상식 수준의 생활 처방(어울리는 색, 활동, 계절·시간대 등)을 "~해 보세요" 정도로 부드럽게 제안합니다.
+- 뻔한 덕담 대신, 이 명식이라서 나오는 구체적인 이야기를 씁니다.
+
+출력 형식 (마크다운, 절 제목은 반드시 "### "로 시작):
+### (총평 — 명식 전체의 형상을 담은 은유 제목)
+### (일간과 타고난 성품)
+### (오행의 균형과 생활 처방)
+### (십성으로 본 일과 재능)
+### (재물을 대하는 태도)
+### (사람과 마음 — 관계의 경향)
+### (마네키네코의 당부)
+각 절 3~5문장, 전체 1800~2600자의 한국어. 마지막 당부는 앞의 풀이를 한 문장으로 안아 주고, 실천할 수 있는 조언 하나로 따뜻하게 마무리합니다.`;
 
 // ── 브라우저가 보낸 명식을 검증하고 프롬프트 재료로 변환 ──────
 // 허용된 간지 한자만 통과시킨다. (표에 없는 글자 = 거부)
@@ -87,34 +99,40 @@ function buildPrompt(payload) {
 // ── AI 부르기 ① Gemini (무료 시작용) ──────────────────────────
 // Google AI Studio에서 무료 발급한 키를 .env의 GEMINI_API_KEY에 넣으면 사용된다.
 async function callGemini(prompt) {
-  const model = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+  // 무료 한도는 "모델별로 하루치"가 따로 있다.
+  // 주 모델이 한도에 닿으면(429) 예비 모델로 한 번 더 시도한다.
+  const primary = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+  const models = [...new Set([primary, 'gemini-2.0-flash', 'gemini-2.5-flash-lite'])];
 
-  // 구글 서버가 잠깐 바쁠 때(503)가 종종 있어서 최대 3번까지 시도한다
   let res;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': process.env.GEMINI_API_KEY,
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-        }),
-      }
-    );
-    if (res.status !== 503 && res.status !== 500) break; // 과부하가 아니면 그대로 진행
-    if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+  for (const model of models) {
+    // 구글 서버가 잠깐 바쁠 때(503)가 종종 있어서 모델당 최대 3번까지 시도한다
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': process.env.GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 8192, temperature: 0.8 },
+          }),
+        }
+      );
+      if (res.status !== 503 && res.status !== 500) break; // 과부하가 아니면 다음 단계로
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+    if (res.status !== 429) break; // 한도 초과가 아니면 예비 모델로 넘어갈 필요 없음
   }
 
   if (!res.ok) {
     const err = new Error(`Gemini ${res.status}`);
     if (res.status === 400 || res.status === 401 || res.status === 403) err.code = 'BAD_KEY';
-    if (res.status === 429) err.code = 'RATE_LIMIT'; // 무료 한도 초과
+    if (res.status === 429) err.code = 'RATE_LIMIT'; // 모든 모델의 무료 한도 초과
     throw err;
   }
   const data = await res.json();

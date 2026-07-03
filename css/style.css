@@ -380,14 +380,39 @@ td.empty-pillar .char-hanja { color: var(--gold-pale); }
   margin-top: 14px;
   line-height: 1.8;
 }
-.interpret-text h3 {
-  font-family: var(--font-display);
-  font-size: 1.02rem;
-  color: var(--red-deep);
-  margin: 16px 0 4px;
-}
 .interpret-text p { margin: 6px 0; }
 .interpret-text strong { color: var(--gold-deep); }
+
+/* 접었다 펴는 풀이 절 (아코디언) */
+.accordion-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 8px 0 2px;
+}
+.interpret-text details {
+  border-bottom: 1.5px dashed var(--gold-pale);
+  padding: 4px 0;
+}
+.interpret-text details:last-of-type { border-bottom: 0; }
+.interpret-text summary {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: var(--red-deep);
+  padding: 10px 2px;
+  cursor: pointer;
+  list-style: none;           /* 기본 ▶ 마커 대신 발바닥 아이콘 */
+  line-height: 1.5;
+}
+.interpret-text summary::-webkit-details-marker { display: none; }
+.interpret-text summary::before {
+  content: '🐾 ';
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+.interpret-text details[open] summary::before { opacity: 1; }
+.interpret-text .section-body { padding: 0 2px 10px; }
 
 /* 풀이 읽어주기 버튼 — 텍스트 아래 작은 알약 */
 .tts-btn {

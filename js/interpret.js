@@ -130,16 +130,29 @@ function escapeHtml(text) {
 }
 
 function renderMarkdownLite(markdown) {
-  return escapeHtml(markdown)
-    .split(/\n{1,}/)
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return '';
-      if (trimmed.startsWith('###')) {
-        return `<h3>${trimmed.replace(/^#+\s*/, '')}</h3>`;
-      }
-      const withBold = trimmed.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      return `<p>${withBold}</p>`;
-    })
-    .join('');
+  // "### 제목" 마다 접었다 펼 수 있는 칸(details)으로 만든다.
+  // 첫 번째 절만 펼쳐 두고, 나머지는 제목을 누르면 펼쳐진다.
+  const lines = escapeHtml(markdown)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let html = '';
+  let openSection = false;
+  let isFirst = true;
+
+  for (const line of lines) {
+    if (line.startsWith('###')) {
+      if (openSection) html += '</div></details>';
+      const title = line.replace(/^#+\s*/, '');
+      html += `<details${isFirst ? ' open' : ''}><summary>${title}</summary><div class="section-body">`;
+      openSection = true;
+      isFirst = false;
+    } else {
+      const withBold = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html += `<p>${withBold}</p>`;
+    }
+  }
+  if (openSection) html += '</div></details>';
+  return `<p class="accordion-hint">제목을 누르면 풀이가 펼쳐져요 🐾</p>` + html;
 }
