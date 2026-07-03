@@ -304,13 +304,18 @@ export default async function handler(req, res) {
       if (apiRes.status !== 503 && apiRes.status !== 500) break;
       if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
-    if (apiRes.status !== 429) break;
+    // 한도 초과(429)나 과부하(503·500)면 예비 모델로 한 번 더 시도
+    // (모델마다 한도·혼잡도가 따로라서, 주 모델이 붐벼도 예비는 뚫릴 때가 많다)
+    if (apiRes.status !== 429 && apiRes.status !== 503 && apiRes.status !== 500) break;
   }
 
   if (!apiRes.ok) {
     console.error('Gemini 오류', apiRes.status, (await apiRes.text()).slice(0, 300));
     if (apiRes.status === 429) {
       return res.status(429).json({ error: '오늘의 무료 풀이 한도를 모두 썼어요. 내일 다시 만나요 🐾' });
+    }
+    if (apiRes.status === 503 || apiRes.status === 500) {
+      return res.status(503).json({ error: 'AI 해석 서버(Gemini)가 지금 많이 붐비고 있어요. 1~2분 뒤에 다시 눌러 주세요 🐾' });
     }
     return res.status(502).json({ error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' });
   }

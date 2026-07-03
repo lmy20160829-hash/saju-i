@@ -307,13 +307,16 @@ async function callGemini(system, prompt) {
       if (res.status !== 503 && res.status !== 500) break; // 과부하가 아니면 다음 단계로
       if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
-    if (res.status !== 429) break; // 한도 초과가 아니면 예비 모델로 넘어갈 필요 없음
+    // 한도 초과(429)나 과부하(503·500)면 예비 모델로 한 번 더 시도
+    // (모델마다 한도·혼잡도가 따로라서, 주 모델이 붐벼도 예비는 뚫릴 때가 많다)
+    if (res.status !== 429 && res.status !== 503 && res.status !== 500) break;
   }
 
   if (!res.ok) {
     const err = new Error(`Gemini ${res.status}`);
     if (res.status === 400 || res.status === 401 || res.status === 403) err.code = 'BAD_KEY';
     if (res.status === 429) err.code = 'RATE_LIMIT'; // 모든 모델의 무료 한도 초과
+    if (res.status === 503 || res.status === 500) err.code = 'OVERLOADED'; // 구글 서버 과부하
     throw err;
   }
   const data = await res.json();
@@ -385,6 +388,9 @@ export async function handleInterpret(req, res) {
     }
     if (err instanceof Anthropic.RateLimitError || err.code === 'RATE_LIMIT') {
       return reply(429, { error: '요청이 많아 잠시 쉬어야 해요. 1분 뒤에 다시 시도해 주세요.' });
+    }
+    if (err.code === 'OVERLOADED') {
+      return reply(503, { error: 'AI 해석 서버(Gemini)가 지금 많이 붐비고 있어요. 1~2분 뒤에 다시 눌러 주세요 🐾' });
     }
     console.error('해석 프록시 오류:', err.message);
     return reply(502, { error: '해석 서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' });
