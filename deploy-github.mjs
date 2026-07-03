@@ -23,18 +23,29 @@ const GH = existsSync(`${homedir()}/bin/gh`) ? `${homedir()}/bin/gh` : 'gh';
 // 저장소에 올릴 파일 목록 (node_modules 등 제외)
 const FILES = [
   '.gitignore',
+  '.env.example',
   'README.md',
   'index.html',
+  'manifest.webmanifest',
+  'sw.js',
   'package.json',
   'package-lock.json',
   'serve.mjs',
   'test-core.mjs',
   'verify.mjs',
   'deploy-github.mjs',
+  'api/interpret.mjs',
+  'proxy/cloudflare-worker.js',
   'css/style.css',
   'js/app.js',
   'js/saju-core.js',
   'js/cities.js',
+  'js/config.js',
+  'js/interpret.js',
+  'icons/icon.svg',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/apple-touch-icon.png',
   'vendor/manseryeok.mjs',
   'vendor/lunar.js',
   'vendor/LICENSE-manseryeok',
@@ -118,7 +129,7 @@ const parents = mainRef.ok ? [JSON.parse(mainRef.out).object.sha] : [];
 
 const commit = ghJson(
   ['api', '-X', 'POST', `repos/${OWNER}/${REPO}/git/commits`, '--input', '-'],
-  { message: '사주아이 배포 — 명식표 MVP', tree: tree.sha, parents }
+  { message: '사주아이 업데이트', tree: tree.sha, parents }
 );
 
 if (mainRef.ok) {

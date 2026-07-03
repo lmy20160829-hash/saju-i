@@ -17,6 +17,8 @@ export const CITIES = [
   { name: '대전', longitude: 127.385 },
   { name: '울산', longitude: 129.311 },
   { name: '세종', longitude: 127.289 },
+  { name: '천안 (충남)', longitude: 127.152 },
+  { name: '홍성 (충남)', longitude: 126.661 },
   { name: '수원', longitude: 127.029 },
   { name: '청주', longitude: 127.489 },
   { name: '전주', longitude: 127.148 },

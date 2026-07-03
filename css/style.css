@@ -339,6 +339,56 @@ td.empty-pillar .char-hanja { color: var(--gold-pale); }
   margin: 12px 2px 0;
 }
 
+/* ══════════ AI 해석 (고양이의 풀이) ══════════ */
+.cta-paw {
+  background: var(--card);
+  color: var(--red-deep);
+  border: 2px solid var(--red);
+  box-shadow: none;
+}
+.cta-paw:hover { background: #FDF1EF; }
+.cta-paw:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.interpret-loading {
+  text-align: center;
+  color: var(--ink-soft);
+  margin: 14px 0 4px;
+}
+/* 발바닥 점 세 개가 차례로 통통 튀는 로딩 표시 */
+.paw-dots::before {
+  content: '🐾';
+  display: inline-block;
+  margin-right: 6px;
+  animation: pawstep 1s ease-in-out infinite;
+}
+@keyframes pawstep {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paw-dots::before { animation: none; }
+}
+
+.interpret-text {
+  background: var(--cream);
+  border: 2px solid var(--gold-pale);
+  border-radius: 14px;
+  padding: 6px 18px 14px;
+  margin-top: 14px;
+  line-height: 1.8;
+}
+.interpret-text h3 {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  color: var(--red-deep);
+  margin: 16px 0 4px;
+}
+.interpret-text p { margin: 6px 0; }
+.interpret-text strong { color: var(--gold-deep); }
+
 /* ══════════ 오행 분포 미터 ══════════ */
 .elements { display: grid; gap: 10px; }
 

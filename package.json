@@ -4,7 +4,7 @@
   "description": "saju-i — 마네키네코가 봐주는 사주명리 웹앱",
   "main": "index.js",
   "scripts": {
-    "dev": "node serve.mjs",
+    "dev": "node --env-file-if-exists=.env serve.mjs",
     "test": "node test-core.mjs"
   },
   "keywords": [],

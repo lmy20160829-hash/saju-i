@@ -12,6 +12,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
+import { handleInterpret } from './api/interpret.mjs';
 
 const PORT = 8890;
 const ROOT = new URL('.', import.meta.url).pathname;
@@ -32,6 +33,12 @@ createServer(async (req, res) => {
   try {
     // 주소에서 물음표(?) 뒷부분은 떼고 파일 경로만 사용
     let path = new URL(req.url, 'http://x').pathname;
+
+    // AI 해석 요청은 파일이 아니라 프록시(api/interpret.mjs)가 처리
+    if (path === '/api/interpret' && req.method === 'POST') {
+      return await handleInterpret(req, res);
+    }
+
     if (path === '/') path = '/index.html';
     // 프로젝트 폴더 밖의 파일은 못 읽게 막는다
     const filePath = join(ROOT, normalize(path).replace(/^(\.\.[/\\])+/, ''));

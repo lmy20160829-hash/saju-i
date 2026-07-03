@@ -9,6 +9,7 @@
 import * as manseryeok from '../vendor/manseryeok.mjs';
 import { createSajuEngine } from './saju-core.js';
 import { CITIES } from './cities.js';
+import { setInterpretTarget } from './interpret.js';
 
 // lunar.js(절기 계산)는 index.html에서 먼저 불러와서
 // 전역 변수 Solar 로 존재한다.
@@ -71,6 +72,8 @@ form.addEventListener('submit', (event) => {
   }
 
   renderResult(saju, { year, month, day, hour, minute, unknownTime, cityName, gender });
+  // AI 해석 버튼에게 "이 명식을 풀이해 줘"라고 대상 등록
+  setInterpretTarget(saju, form.elements.gender.value);
   resultSection.hidden = false;
   resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
@@ -218,4 +221,11 @@ if (new URLSearchParams(location.search).has('demo')) {
   dateInput.value = '1990-05-15';
   timeInput.value = '14:30';
   form.requestSubmit();
+}
+
+// ── PWA: 서비스워커 등록 (한 번 방문하면 다음부터 더 빨리 열린다) ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {
+    // 등록 실패해도 앱 사용에는 지장 없음
+  });
 }
