@@ -161,7 +161,10 @@ async function handleTts(request, env) {
       }),
     }
   );
-  if (!res.ok) return json(res.status === 429 ? 429 : 502, { error: 'TTS 실패 — 기기 음성으로 대체' });
+  if (!res.ok) {
+    console.log('TTS 오류', res.status, (await res.text()).slice(0, 250));
+    return json(res.status === 429 ? 429 : 502, { error: 'TTS 실패 — 기기 음성으로 대체' });
+  }
   const data = await res.json();
   const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
   if (!part) return json(502, { error: 'TTS 실패 — 기기 음성으로 대체' });
