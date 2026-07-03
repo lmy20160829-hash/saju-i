@@ -203,6 +203,15 @@ function charCell(char, isDayMaster) {
   ko.textContent = `${char.ko} · ${char.element}`;
   td.appendChild(hanja);
   td.appendChild(ko);
+
+  // 십성 라벨 — 일간(나)과의 관계 이름 (일간 자신은 '일간')
+  const godText = isDayMaster ? '일간' : char.tenGod;
+  if (godText) {
+    const god = document.createElement('span');
+    god.className = 'char-god';
+    god.textContent = godText;
+    td.appendChild(god);
+  }
   return td;
 }
 

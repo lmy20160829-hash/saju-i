@@ -308,6 +308,18 @@ input:focus, select:focus { border-color: var(--gold); outline: none; }
 .el-금 { color: var(--el-metal); }
 .el-수 { color: var(--el-water); }
 
+/* 십성 라벨 — 각 글자와 일간의 관계 (편관·편재·비견 …) */
+.char-god {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--red-deep);
+  background: #F8ECE4;
+  border-radius: 999px;
+  padding: 2px 0;
+  margin: 6px 5px 0;
+}
+
 /* 일간(나) 강조: 빨간 도장 느낌 */
 td.day-master {
   border-color: var(--red);
