@@ -9,7 +9,7 @@
 import * as manseryeok from '../vendor/manseryeok.mjs';
 import { createSajuEngine } from './saju-core.js';
 import { CITIES } from './cities.js';
-import { setInterpretTarget } from './interpret.js';
+import { setInterpretTarget, requestDaeunReading } from './interpret.js';
 
 // lunar.js(절기 계산)는 index.html에서 먼저 불러와서
 // 전역 변수 Solar 로 존재한다.
@@ -64,9 +64,13 @@ form.addEventListener('submit', (event) => {
   const cityName = citySelect.options[citySelect.selectedIndex].textContent;
 
   // 사주 계산 (라이브러리 계산값만 사용 — AI 추정 없음)
+  // 성별은 대운의 방향(순행/역행)을 정하는 데 쓰인다
   let saju;
   try {
-    saju = engine.calculate({ year, month, day, hour, minute, unknownTime, longitude });
+    saju = engine.calculate({
+      year, month, day, hour, minute, unknownTime, longitude,
+      gender: form.elements.gender.value,
+    });
   } catch (err) {
     return showError('계산할 수 없는 날짜예요. 1901~2049년 사이인지 확인해 주세요.');
   }
@@ -183,6 +187,48 @@ function renderResult(saju, info) {
     noteText += ` 반면 ${missing.join('·')} 기운은 명식에 보이지 않네요.`;
   }
   document.getElementById('element-note').textContent = noteText;
+
+  // ── 대운 타임라인 (10년 단위, 지금 걷는 대운 강조) ──
+  // 왼쪽부터 나이 순서로 흐르는 가로 스크롤 — 사주아이류 대운 타임라인 방식.
+  // 카드를 누르면 그 10년만 깊이 푸는 '선택한 대운' 해석을 요청한다.
+  const daeunBox = document.getElementById('daeun');
+  daeunBox.innerHTML = '';
+  const nowYear = new Date().getFullYear();
+  let nowCell = null;
+  saju.daeun.pillars.forEach((p, index) => {
+    const isNow = nowYear >= p.startYear && nowYear < p.startYear + 10;
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'daeun-cell' + (isNow ? ' daeun-now' : '');
+    cell.setAttribute('aria-label', `${p.startAge}세부터의 ${p.ko} 대운 풀이 듣기`);
+    cell.innerHTML = `
+      ${isNow ? '<span class="me-badge">지금</span>' : ''}
+      <span class="daeun-age">${p.startAge}세~</span>
+      <span class="daeun-hanja">
+        <span class="char-hanja el-${p.stem.element}">${p.stem.hanja}</span><span class="char-hanja el-${p.branch.element}">${p.branch.hanja}</span>
+      </span>
+      <span class="char-ko">${p.ko}</span>
+      <span class="char-god">${p.stem.tenGod}·${p.branch.tenGod}</span>
+      <span class="daeun-year">${p.startYear}년~</span>
+    `;
+    cell.addEventListener('click', () => requestDaeunReading(index));
+    daeunBox.appendChild(cell);
+    if (isNow) nowCell = cell;
+  });
+  // 지금 걷는 대운이 화면 가운데 오도록 스크롤을 맞춘다.
+  // 이 함수가 불릴 때는 결과 영역이 아직 hidden이라 크기가 0이므로,
+  // 화면에 나타난 다음 프레임에서 계산한다.
+  if (nowCell) {
+    requestAnimationFrame(() => {
+      daeunBox.scrollLeft = Math.max(
+        0, nowCell.offsetLeft - daeunBox.clientWidth / 2 + nowCell.clientWidth / 2
+      );
+    });
+  }
+  document.getElementById('daeun-note').textContent =
+    `${saju.daeun.forward ? '순행' : '역행'} 대운 · 나이는 대운수(세는나이) 기준이에요.` +
+    ' 카드를 누르면 그 10년의 풀이를 들려드려요.' +
+    (saju.unknownTime ? ' 시간을 몰라 시작 나이가 1년쯤 어긋날 수 있어요.' : '');
 }
 
 // 글자 하나(천간 또는 지지)를 표의 칸으로 만들기

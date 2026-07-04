@@ -52,5 +52,38 @@ check('십성: 월간 신금', s1.pillars.month.stem.tenGod, '겁재');
 // 시간 계(癸) = 금생수(내가 낳음)·다른 음양 → 상관
 check('십성: 시간 계수', s1.pillars.hour.stem.tenGod, '상관');
 
+// ── 6. 대운: 양남 순행 / 양녀 역행, 월주(신사)에서 이어지는 60갑자 ──
+// 1990년은 경오년(년간 庚 = 양) → 남성 순행(월주 다음 임오부터),
+// 여성 역행(월주 이전 경진부터). 방향 규칙만으로 답이 정해진다.
+// 대운수(한국 만세력 표준): 절입까지 일수 ÷ 3 반올림, 대운수는 세는나이
+// → 대운 바뀌는 해 = 출생연 + 대운수 - 1.
+//   남: 망종(6/6 06:46)까지 21.72일 → 7 → 1996년 / 여: 입하(5/6 02:35)부터 9.45일 → 3 → 1992년
+const mDaeun = engine.calculate({ year: 1990, month: 5, day: 15, hour: 14, minute: 30, gender: 'male' }).daeun;
+check('대운(남) 순행', String(mDaeun.forward), 'true');
+check('대운(남) 첫 대운', mDaeun.pillars[0].ko, '임오');
+check('대운(남) 대운수', String(mDaeun.pillars[0].startAge), '7');
+check('대운(남) 첫 대운 해(출생연+대운수-1)', String(mDaeun.pillars[0].startYear), '1996');
+check('대운(남) 개수', String(mDaeun.pillars.length), '8');
+const fDaeun = engine.calculate({ year: 1990, month: 5, day: 15, hour: 14, minute: 30, gender: 'female' }).daeun;
+check('대운(여) 역행', String(fDaeun.forward), 'false');
+check('대운(여) 첫 대운', fDaeun.pillars[0].ko, '경진');
+check('대운(여) 대운수', String(fDaeun.pillars[0].startAge), '3');
+check('대운(여) 첫 대운 해', String(fDaeun.pillars[0].startYear), '1992');
+check('대운(여) 10년 간격', String(fDaeun.pillars[1].startAge - fDaeun.pillars[0].startAge), '10');
+check('대운 십성 계산(일간 경금 vs 임오 천간 임수)', mDaeun.pillars[0].stem.tenGod, '식신');
+
+// ── 6.5 대운 시작 해 회귀 테스트 (버그 제보 실사주 기준) ──
+// 1982-02-24 05:25 여성 (임술년 양녀 → 역행):
+//   입춘(2/4 12:45 KST)까지 19.69일 → ÷3 = 6.56 → 반올림 대운수 7 (세는나이)
+//   역행 대운: 신축(7세·1988) → 경자 → 기해 → 무술 → 정유(47세·2028)
+// 사용자 확인값: 정유(丁酉) 대운은 2028년, 세는나이 47세에 시작한다.
+const real = engine.calculate({ year: 1982, month: 2, day: 24, hour: 5, minute: 25, gender: 'female' }).daeun;
+check('실사주 역행', String(real.forward), 'false');
+check('실사주 대운수', String(real.pillars[0].startAge), '7');
+check('실사주 첫 대운(신축) 해', String(real.pillars[0].startYear), '1988');
+check('실사주 정유 대운 간지', real.pillars[4].ko, '정유');
+check('실사주 정유 대운 나이(세는나이)', String(real.pillars[4].startAge), '47');
+check('실사주 정유 대운 시작 해', String(real.pillars[4].startYear), '2028');
+
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 process.exit(fail ? 1 : 0);

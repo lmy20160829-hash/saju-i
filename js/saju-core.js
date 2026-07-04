@@ -128,6 +128,7 @@ export function createSajuEngine({ manseryeok, Solar }) {
    *   hour, minute      : 태어난 시각 (숫자, 시간 모름이면 생략)
    *   unknownTime       : true 면 시주 없이 3기둥
    *   longitude         : 태어난 지역 경도 (진태양시 보정용, 기본 서울)
+   *   gender            : 'male' | 'female' — 대운 방향(순행/역행) 계산용
    */
   function calculate(input) {
     const {
@@ -135,6 +136,7 @@ export function createSajuEngine({ manseryeok, Solar }) {
       hour = null, minute = 0,
       unknownTime = false,
       longitude = 126.978, // 서울
+      gender = 'female',
     } = input;
 
     // ── (1) 일주·시주: manseryeok-js (진태양시 보정 포함) ──────────
@@ -158,7 +160,8 @@ export function createSajuEngine({ manseryeok, Solar }) {
       cst.getFullYear(), cst.getMonth() + 1, cst.getDate(),
       cst.getHours(), cst.getMinutes(), 0
     );
-    const eightChar = solar.getLunar().getEightChar();
+    const lunarDate = solar.getLunar();
+    const eightChar = lunarDate.getEightChar();
     const yearHanja = eightChar.getYear();   // 예: '甲辰'
     const monthHanja = eightChar.getMonth(); // 예: '丙寅'
 
@@ -189,6 +192,28 @@ export function createSajuEngine({ manseryeok, Solar }) {
       elementCount[p.branch.element] += 1;
     }
 
+    // ── (5.5) 대운: 10년 단위 운의 흐름 ─────────────────────────
+    // 방향(순행/역행)과 간지 순서는 lunar-javascript의 Yun을 쓰되,
+    // 시작 나이(대운수)는 한국 만세력 표준으로 직접 계산한다:
+    //   · 대운수 = 절입(節)까지의 날수 ÷ 3 → 반올림 (전통 '1은 버리고 2는 올림')
+    //   · 대운수는 세는나이 — 대운이 바뀌는 해 = 태어난 해 + 대운수 - 1
+    // 검증 기준 사주: 1982-02-24 05:25 여성 → 입춘까지 19.69일, 대운수 7,
+    // 정유(丁酉) 대운은 세는나이 47세 = 2028년 시작. (test-core.mjs 회귀 테스트)
+    const yun = eightChar.getYun(gender === 'male' ? 1 : 0);
+    const jieSolar = (yun.isForward() ? lunarDate.getNextJie() : lunarDate.getPrevJie())
+      .getSolar(); // 절입 시각 (분 단위 천문 계산값)
+    const diffDays = Math.abs(jieSolar.subtractMinute(solar)) / (24 * 60);
+    const daeunSu = Math.max(1, Math.round(diffDays / 3)); // 대운수 (최소 1)
+    const daeunPillars = yun.getDaYun()
+      .filter((d) => d.getGanZhi()) // 첫 항목은 대운 전 유년기라 간지가 없다
+      .slice(0, 8)                  // 8개 대운 = 80년이면 충분
+      .map((d, i) => ({
+        ...buildPillar(d.getGanZhi(), dayStemHanja),
+        startAge: daeunSu + i * 10,             // 대운수 나이 (세는나이)
+        endAge: daeunSu + i * 10 + 9,
+        startYear: year + daeunSu + i * 10 - 1, // 세는나이 N세 해 = 출생연 + N - 1
+      }));
+
     // ── (6) 결과 꾸러미 ────────────────────────────────────────────
     return {
       pillars,
@@ -199,6 +224,10 @@ export function createSajuEngine({ manseryeok, Solar }) {
         yang: STEMS[dayStemHanja].yang,
       },
       elementCount,
+      daeun: {                           // 대운: 10년 단위 운의 흐름
+        forward: yun.isForward(),        // true = 순행
+        pillars: daeunPillars,
+      },
       totalChars: hourHanja ? 8 : 6,     // 오행 분포의 분모
       correctedTime: ms.isTimeCorrected && ms.correctedTime
         ? ms.correctedTime               // {hour, minute} 진태양시

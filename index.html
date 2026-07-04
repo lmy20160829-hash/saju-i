@@ -163,7 +163,8 @@
       <p class="bubble bubble-result">당신의 <strong>명식</strong>이에요. 차근차근 살펴볼게요.</p>
 
       <div class="card">
-        <h2 class="section-title" id="result-title">사주 명식</h2>
+        <!-- "내 사주 원국"은 사주아이(saju-kid) 등 상용 서비스가 쓰는 이름 -->
+        <h2 class="section-title" id="result-title">내 사주 원국 <span class="hint">명식표</span></h2>
         <p class="result-birth" id="result-birth"></p>
 
         <!-- 명식표: 전통 방식대로 오른쪽 끝이 연주(태어난 해) -->
@@ -184,6 +185,11 @@
         <div class="elements" id="elements"></div>
         <p class="note" id="element-note"></p>
 
+        <!-- 대운 흐름: 10년 단위 운의 타임라인 (사주아이 대운해설 벤치마킹) -->
+        <h2 class="section-title">대운 흐름 <span class="hint">10년 단위 운의 물줄기</span></h2>
+        <div class="daeun-strip" id="daeun" role="list" aria-label="대운 타임라인"></div>
+        <p class="note" id="daeun-note"></p>
+
         <!-- AI 해석: 계산된 명식만 근거로 AI가 풀이 -->
         <!-- 테마별 해설: 주제를 골라 깊이 풀이 받는 구성 (운세 앱 벤치마킹) -->
         <h2 class="section-title">고양이의 풀이</h2>
@@ -192,9 +198,16 @@
           <strong>따로 깊이</strong> 풀이해 드려요.
         </p>
         <div class="topic-chips" id="topic-chips" role="group" aria-label="풀이 주제 고르기"></div>
+
+        <!-- 연도별 운세: 원하는 해를 골라 그 해의 세운 풀이 (사주아이 연도별 운세 벤치마킹) -->
+        <div class="year-row">
+          <label for="year-select">📅 연도별 운세</label>
+          <select id="year-select"></select>
+          <button type="button" id="year-btn" class="year-btn">보기</button>
+        </div>
         <p class="interpret-loading" id="interpret-loading" hidden>
           <span class="paw-dots" aria-hidden="true"></span>
-          고양이가 만세력을 읽고 있어요…
+          <span id="loading-text">고양이가 만세력을 읽고 있어요…</span>
         </p>
         <div class="interpret-text" id="interpret-result" hidden></div>
         <p class="form-error" id="interpret-error" role="alert" hidden></p>
