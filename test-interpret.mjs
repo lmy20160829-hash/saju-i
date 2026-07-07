@@ -117,7 +117,7 @@ check('첫 대운 전 연도는 유년기 안내', buildPrompt({ ...SAMPLE, topi
 check('대운 없이도 year 동작(하위 호환)', buildPrompt({ ...SAMPLE, topic: 'year', year: 2028 }).prompt.includes('선택한 해의 세운'));
 check('year의 위조 대운 거부', buildPrompt({ ...SAMPLE, topic: 'year', year: 2028, daeun: [{ ganzhi: '甲Z', startAge: 8, startYear: 2000 }] }), null);
 
-// ── 5.9 연도별 운세의 분야별 상세운 (점신 운세보고서 벤치마킹) ──
+// ── 5.9 연도별 운세의 분야별 상세운 ──
 const yearSystem = buildPrompt({ ...SAMPLE, topic: 'year', year: 2028 }).system;
 for (const field of ['재물운', '연애·결혼운', '일·직업운', '건강·생활 리듬', '인간관계운', '학업·시험운']) {
   check(`연도별 분야 절 포함: ${field}`, yearSystem.includes(`### ${field}`));

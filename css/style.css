@@ -496,9 +496,7 @@ td.empty-pillar .char-hanja { color: var(--gold-pale); }
   margin: 12px 0 0;
 }
 
-/* ── 풀이 요약 카드: 키워드 칩 + 기운 지수 게이지 + 행운 아이템 칩 ──
-   점신의 "점수 + 한줄평 → 상세 해설" 위계와
-   행운의 색·숫자·방위 아이템 카드를 벤치마킹한 구성 */
+/* ── 풀이 요약 카드: 키워드 칩 + 기운 지수 게이지 + 행운 아이템 칩 ── */
 .summary-card {
   background: var(--card);
   border: 2px solid var(--gold-pale);

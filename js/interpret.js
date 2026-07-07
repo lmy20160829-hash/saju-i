@@ -6,7 +6,7 @@
 //   → 서버가 주제별 프롬프트를 조립해 AI 해석 생성 (키는 서버에만)
 //   → 받은 글을 요약 카드 + 절별 아코디언으로 표시 (interpret-render.js)
 //
-// 테마별 해설 구성은 점신 같은 운세 앱을 벤치마킹했다:
+// 테마별 해설 구성:
 //   결과를 하나의 긴 글이 아니라 주제(재물·연애·직업 …)별로 나눠,
 //   사용자가 궁금한 주제를 골라 깊이 읽는 방식.
 //   한 번 받은 주제는 캐시에 두어 칩을 다시 눌러도 재요청하지 않는다.
@@ -34,9 +34,8 @@ const resultBox = document.getElementById('interpret-result');
 const errorBox = document.getElementById('interpret-error');
 
 // ── 기다림을 지루하지 않게: 로딩 문구 로테이션 ──────────────
-// AI 생성은 십몇 초쯤 걸린다. 사주아이(saju-kid) 같은 서비스가
-// 캐릭터 드립 문구를 돌려 가며 대기 시간을 재미로 채우는 방식을
-// 벤치마킹했다. (문구는 우리 마네키네코에 맞춰 새로 썼다)
+// AI 생성은 십몇 초쯤 걸린다. 캐릭터 드립 문구를 돌려 가며
+// 대기 시간을 재미로 채운다. (문구는 우리 마네키네코에 맞춰 썼다)
 const LOADING_LINES = [
   '고양이가 만세력을 한 장씩 넘기고 있어요…',
   '여덟 글자의 기운을 저울에 달아 보는 중…',
@@ -190,7 +189,7 @@ function showTopic(topic) {
 }
 
 // ── 대운 카드 클릭 → 그 10년만 깊이 풀이 (app.js가 호출) ─────
-// 사주아이의 "대운 타임라인에서 원하는 10년을 골라 해설"을 벤치마킹
+// 대운 타임라인에서 원하는 10년을 골라 해설
 export function requestDaeunReading(index) {
   if (!currentSaju) return;
   const p = currentSaju.daeun.pillars[index];
@@ -204,7 +203,7 @@ export function requestDaeunReading(index) {
   });
 }
 
-// ── 연도 선택 → 그 해의 세운 풀이 (사주아이 연도별 운세 벤치마킹) ──
+// ── 연도 선택 → 그 해의 세운 풀이 ──
 const yearSelect = document.getElementById('year-select');
 const yearBtn = document.getElementById('year-btn');
 {
@@ -241,8 +240,8 @@ function display(job, text) {
     btn.classList.toggle('is-active', id === job.chipId);
     btn.classList.toggle('is-done', readingCache.has(id));
   }
-  // 풀이 끝의 다음 걸음 안내 — 사주아이류 서비스가 결과 하단에
-  // "다른 운세는 어때요? / 가족 사주도 궁금하다면?"을 붙이는 방식
+  // 풀이 끝의 다음 걸음 안내 — 결과 하단에
+  // "다른 운세는 어때요? / 가족 사주도 궁금하다면?"을 붙인다
   resultBox.innerHTML =
     `<p class="reading-topic">${job.emoji} ${job.label}</p>` +
     renderMarkdownLite(text) +

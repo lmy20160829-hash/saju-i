@@ -189,7 +189,7 @@ function renderResult(saju, info) {
   document.getElementById('element-note').textContent = noteText;
 
   // ── 대운 타임라인 (10년 단위, 지금 걷는 대운 강조) ──
-  // 왼쪽부터 나이 순서로 흐르는 가로 스크롤 — 사주아이류 대운 타임라인 방식.
+  // 왼쪽부터 나이 순서로 흐르는 가로 스크롤.
   // 카드를 누르면 그 10년만 깊이 푸는 '선택한 대운' 해석을 요청한다.
   const daeunBox = document.getElementById('daeun');
   daeunBox.innerHTML = '';
